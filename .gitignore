@@ -27,18 +27,15 @@ crash.log
 prometheus_data/
 grafana_data/
 
-# k8s
-*.out
-
-# --- System ---
+# System
 Thumbs.db
 
-# --- VS Code ---
+# VS Code
 .vscode/
 *.code-workspace
 .history/
 
-# --- Docker / Containers ---
+# Docker/Containers
 **/tmp/
 **/cache/
 *.pid
@@ -46,26 +43,26 @@ Thumbs.db
 docker-compose.override.yml
 docker-compose.local.yml
 
-# --- Python virtualenv ---
+# Python virtualenv
 venv/
 .env/
 .venv/
 
-# --- CI/CD cache ---
+# CI/CD cache
 .cache/
 
-# --- Netlify / Node ---
+# Netlify/Node
 .netlify/
 .env.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# --- Kubernetes ---
+# Configs
 *.yaml~
 *.yml~
 
-# --- Misc ---
+# Misc
 *.bak
 *.swp
 *.tmp
