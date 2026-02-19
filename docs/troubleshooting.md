@@ -50,3 +50,92 @@ nslookup ru.ters-team.com
 # Логи контейнера:
 docker compose logs -f ters-proxy
 ```
+
+## TLS/SNI mismatch при проксировании Wix
+**Симптом:** `502 Bad Gateway` или в логах nginx: `SSL_do_handshake() failed no alternative certificate subject name matches target host name`
+**Причина:** Wix использует SNI для выбора сертификата. При проксировании без `proxy_ssl_server_name on` или с неправильным Host - TLS рукопожатие ломается.
+**Фикс:**
+```
+proxy_ssl_server_name on;
+proxy_ssl_name $host;
+proxy_set_header Host $host;
+```
+**Комментарий:**
+Критично при проксировании multi-tenant SaaS (Wix, Notion, Shopify и т.п.).
+
+## Медленный первый байт (TTFB) из КНР при проксировании SaaS
+**Симптом:** `time_connect` нормальный, `time_starttransfer` 2–4+ секунды (особенно из Китая)
+**Причина:**
+- SaaS-origin (Wix) находится за AWS/Akamai
+- GFW не блокирует, но деградирует TCP window/congestion control
+- При повторных запросах ситуация улучшается
+**Что НЕ помогает:**
+- HTTP/2 к upstream
+- aggressive keepalive
+- gzip к upstream
+**Что помогает:**
+- Минимизация количества запросов (layout - static image)
+- Уменьшение DOM/sections
+- Отказ от iframe / chained proxies
+- Облачная edge-платформа с хорошими маршрутами (Render cloud)
+**Статус:** Оптимизировано на уровне контента + выбор хостинга.
+
+## HTTP - HTTPS - www редиректы: лишняя латентность
+**Симптом:** Lighthouse/WebPageTest показывает Redirect Time: ~1.5–2s, Особенно заметно в КНР
+**Причина:** Дополнительный RTT на каждый redirect. В Китае RTT ×2–3 от Европы/США
+**Решение (принятое):** Сделать редирект на стороне reverse-proxy, не отдавать канонизацию Wix-у
+**Альтернатива (отклонена):** Убрать редирект и надеяться на Wix canonical logic - нестабильно, не детерминировано
+
+## sub_filter + gzip: контент не переписывается
+**Симптом:** HTML/CSS приходит, но ссылки не заменяются, `sub_filter` «не срабатывает»
+**Причина:** upstream отдаёт gzip/br, nginx не может делать `sub_filter` по сжатому телу
+**Фикс:** `proxy_set_header Accept-Encoding ""`
+**Важно:** gzip включаем только к клиенту, upstream - всегда plain text
+
+## wix-thunderbolt/layout.js долго грузится
+**Симптом:** wix-thunderbolt или layout.js 2–4 секунды, особенно видно в Network waterfall
+**Причина:** runtime Wix SPA тянется с Wix CDN, а проксирование ломает часть логики (уже подтверждено)
+**Решение:**
+- Не проксировать JS runtime Wix
+- Убрать layout (hero - static image)
+**Статус:**
+- Решено на уровне дизайна (самое эффективное решение).
+
+## Render vs VPS: различие в сетевой модели
+**Симптом:**
+- На VPS (Kamatera) хуже скорость из КНР/РФ
+- На Render - стабильно лучше без тонкой настройки
+**Причина:**
+Render использует:
+- Anycast / smart routing
+- оптимизированные egress-пути
+- VPS = один ASN, один маршрут
+**Вывод:** Проблема была не в nginx, а в сетевой топологии
+**Статус:** Зафиксировано, принято как архитектурное решение
+
+## Контейнер стартует, но сайт недоступен (Render)
+**Симптом:** Container healthy, но HTTP 502/timeout
+**Причина:** nginx слушает не $PORT, а Render проксирует только на заданный порт
+**Фикс:** listen ${PORT} или EXPOSE 10000
+**Комментарий:** типичная ошибка при миграции с VPS - PaaS.
+
+## Диагностика из РФ/КНР (рекомендуемый минимум)
+### Проверка TLS/SNI
+curl -v https://www.ters-team.com --resolve www.ters-team.com:443:IP
+### Проверка TTFB
+curl -w "@curl-format.txt" -o /dev/null -s https://www.ters-team.com
+### Проверка media
+curl -I https://www.ters-team.com/wix-media/...
+
+## Изображения Wix не загружаются в РФ
+**Симптом:** 
+- Сайт полностью работает (SPA, карусели, меню, JS). 
+- Изображения (hero, carousel, custom media) не отображаются только в РФ.
+**Причина:** 
+- Фильтрация image CDN Wix или сторонних media-hosts со стороны провайдеров РФ. 
+- Функционал Wix (JS/CSS) грузится с других доменов, не попавших под блокировки.
+**Подтверждение:** 
+- Из Китая - работает. 
+- Из РФ - блокируются только media-запросы (media.wixstatic.com, static.wixstatic.com).
+**Решения:** Reverse-proxy media через nginx (proxy_pass для image-хостов) или перенос изображений на собственный CDN/VPS.
+**Статус:** Проблема решена настройкой proxy_pass и sub_filter.
