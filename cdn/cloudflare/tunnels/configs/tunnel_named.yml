@@ -36,5 +36,6 @@ ingress:
   - hostname: status.proxy.ters-team.com
     service: http_status:200
 
-  # 3) Фолбэк
+  # 3) fallback
   - service: http_status:404
+  
