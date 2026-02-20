@@ -150,7 +150,7 @@ Cloudflare **не участвует в управлении трафиком**:
 
 Принятые решения: см. `docs/decisions.md`  
 Отладка/ошибки: см. `docs/troubleshooting.md`  
-Дорожная карта: см. `docs/roadmap_issues.md`
+Дорожная карта: см. `docs/roadmap_issues.md`  
 Скриншоты настроек, логов, ошибок: см. `docs/screenshots`
 
 
