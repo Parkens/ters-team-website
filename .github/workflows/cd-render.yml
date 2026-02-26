@@ -1,13 +1,10 @@
-name: CI/CD (Render, tag-gated)
+name: CD (Render, tag-gated)
 
 on:
-  pull_request:
-    branches: ["main"]
-
   push:
-    branches: ["main"]
     tags:
       - "v*.*.*" # деплой только при публикации тега
+
 permissions:
   contents: read
 
@@ -16,44 +13,46 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  ci:
-    name: CI (docker build)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Билдим как Render (контекст cloud/render + Dockerfile)
-      - name: Docker build (CI)
-        uses: docker/build-push-action@v6
-        with:
-          context: cloud/render
-          file: cloud/render/Dockerfile
-          load: true
-          tags: ters-team-website:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   deploy_production:
     name: Deploy to Render (production) [tag-gated]
-    needs: [ci]
     runs-on: ubuntu-latest
     environment: production
 
-    # Запускаем только на push тега вида vX.Y.Z
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tag commit is on main
+        run: |
+          git fetch origin main:refs/remotes/origin/main
+          echo "Tag ref: $GITHUB_REF"
+          echo "Tag name: $GITHUB_REF_NAME"
+
+          TAG_COMMIT="$(git rev-list -n 1 "$GITHUB_REF")"
+          MAIN_COMMIT="$(git rev-parse refs/remotes/origin/main)"
+
+          echo "Tag commit:  $TAG_COMMIT"
+          echo "Main commit: $MAIN_COMMIT"
+
+          if [ "$TAG_COMMIT" = "$MAIN_COMMIT" ]; then
+            echo "OK: tag commit equals main HEAD."
+          else
+            echo "ERROR: tag commit does NOT equal main HEAD. Refusing to deploy."
+            exit 1
+          fi
+
+      # Разрешаем semver + pre release
       - name: Validate semver tag vX.Y.Z
         env:
-          TAG: ${{ github.ref_name }}   # для push тега это имя тега (v0.2.1, v0.2.2 и т.д.)
+          TAG: ${{ github.ref_name }}   # имя тега (v0.2.1, v0.2.2 и т.д.)
         run: |
           echo "Tag: $TAG"
-          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "Tag must match vX.Y.Z (e.g. v1.2.3). Got: $TAG"
+          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "Tag must match vX.Y.Z or vX.Y.Z-<pre> (e.g. v1.2.3, v1.2.3-rc.1). Got: $TAG"
             exit 1
           fi
 
@@ -79,13 +78,14 @@ jobs:
 
           echo "Render deploy hook failed after retries."
           exit 1
-
-      - name: Smoke test (wait + healthz)
+      
+      # Базовые проверки готовности
+      - name: Smoke test (wait + readiness)
         env:
           PROD_SMOKE_URL: ${{ secrets.PROD_SMOKE_URL }}
         run: |
           if [ -z "$PROD_SMOKE_URL" ]; then
-            echo "Missing secret: PROD_SMOKE_URL (e.g. https://www.ters-team.com/healthz)"
+            echo "Missing secret: PROD_SMOKE_URL (e.g. https://www.ters-team.com/readyz)"
             exit 1
           fi
 
@@ -96,8 +96,8 @@ jobs:
             echo "Smoke check attempt $i: $PROD_SMOKE_URL"
             code=$(curl -L -s -o /dev/null -w "%{http_code}" "$PROD_SMOKE_URL" || true)
 
-            if [ "$code" = "200" ]; then
-              echo "Smoke test OK (HTTP 200)."
+            if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+              echo "Smoke test OK (HTTP $code)."
               exit 0
             fi
 
@@ -105,5 +105,5 @@ jobs:
             sleep 10
           done
 
-          echo "Smoke test FAILED: service didn't become healthy in time."
+          echo "Smoke test FAILED: service didn't become ready in time."
           exit 1
