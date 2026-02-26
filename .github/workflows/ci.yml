@@ -43,7 +43,7 @@ jobs:
 
       - name: Smoke test (default /healthz)
         run: |
-          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/healthz || true)
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: www.ters-team.com" http://localhost:8080/healthz || true)
           if [ "$code" != "200" ]; then
             echo "healthz failed (HTTP $code)"
             docker logs ters-web || true
