@@ -1,0 +1,78 @@
+name: CI (docker build)
+
+on:
+  pull_request:
+    branches: ["main"]
+
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI (docker build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Билдим как Render
+      - name: Docker build (CI)
+        uses: docker/build-push-action@v6
+        with:
+          context: cloud/render
+          file: cloud/render/Dockerfile
+          load: true
+          tags: ters-team-website:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Nginx config test (nginx -t)
+        run: |
+          docker run --rm ters-team-website:ci nginx -t
+
+      - name: Run container (smoke)
+        run: |
+          docker run -d --name ters-web -p 8080:80 ters-team-website:ci
+          sleep 1
+
+      - name: Smoke test (default /healthz)
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/healthz || true)
+          if [ "$code" != "200" ]; then
+            echo "healthz failed (HTTP $code)"
+            docker logs ters-web || true
+            exit 1
+          fi
+          echo "healthz OK (HTTP 200)."
+      
+      # Базовые проверки
+      - name: Routing checks (Host header)
+        run: |
+          set -e
+
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: www.ters-team.com" http://localhost:8080/healthz || true)
+          if [ "$code" != "200" ]; then
+            echo "www healthz failed (HTTP $code)"
+            docker logs ters-web || true
+            exit 1
+          fi
+          echo "www healthz OK (HTTP 200)."
+
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: ters-team.com" http://localhost:8080/any || true)
+          if [ "$code" != "301" ]; then
+            echo "apex redirect failed (expected 301, got HTTP $code)"
+            docker logs ters-web || true
+            exit 1
+          fi
+          echo "apex redirect OK (HTTP 301)."
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f ters-web >/dev/null 2>&1 || true
