@@ -45,6 +45,7 @@
   - CI/CD деплоя,
   - SRE-практик (SLO/SLA),
   - synthetic latency monitoring.
+  - synthetic readiness probing (RU/CN vantage points)
 
 
 ## Success criteria
@@ -93,11 +94,46 @@ Render (Anycast/optimized routing)
   ↓
 Docker container
   ↓
-nginx (reverse-proxy, IPv4, SNI, no-QUIC)
+nginx (reverse-proxy + upstream readiness probe)
   ↓
 Wix origin (SPA, JS runtime, media CDN)
 ```
 **Примечание:** Anycast используется на уровне PaaS-провайдера (Render), а не как управляемый CDN с логикой маршрутизации.
+
+
+## Readiness & Deployment Safety Model
+Ingress-прокси реализует двухуровневую проверку доступности (liveliness/readiness):
+
+`/healthz` - проверяет только liveliness ingress (nginx container running)
+`/readyz`  - проверяет доступность upstream SaaS-origin (Wix)
+
+### `/healthz`
+Возвращает `200 OK`, если:
+- контейнер nginx запущен,
+- конфигурация загружена,
+- ingress готов принимать соединения.
+
+Не выполняет upstream-проверок.
+
+Используется для:
+- container runtime liveliness checks,
+- Render service health.
+
+### `/readyz`
+
+Выполняет **реальный HTTP GET-запрос к upstream Wix-origin** через internal proxy:
+
+```nginx
+auth_request /_readyz_upstream;
+```
+- Deployment считается успешным только если:
+  - upstream TLS handshake успешен,
+  - upstream TCP connection устанавливается,
+  - upstream HTTP endpoint отвечает 2xx или 3xx.
+
+**Любая upstream-ошибка (HTTP 4xx/5xx, timeout, connection failure или TLS handshake failure) приводит к состоянию: HTTP 503 upstream not ready**
+
+Upstream-check выполняется с тем же Host/SNI, что и пользовательский трафик - это позволяет выявлять ошибки Wix multi-tenant routing, TLS SNI mismatch или origin canonical mapping. Таким образом CI/CD pipeline проверяет не только liveliness ingress, но и фактическую способность reverse-proxy обслужить пользовательский трафик.
 
 
 ## Resource & Cost Constraints
@@ -147,6 +183,7 @@ Cloudflare **не участвует в управлении трафиком**:
 - отказ от DNS-level плясок
 - детерминированная L4/L7 маршрутизация
 - минимальное вмешательство в SaaS-логику (Wix)
+- readiness-gated deployments (origin reachability before rollout)
 
 Принятые решения: см. `docs/decisions.md`  
 Отладка/ошибки: см. `docs/troubleshooting.md`  
@@ -158,7 +195,7 @@ Cloudflare **не участвует в управлении трафиком**:
 ```
 cdn/                    # Конфиги/заметки/cкриншоты по Cloudflare DNS/Tunnel и Netlify Iframe mirror/Edge Functions
 docs/                   # Decisions, Troubleshooting, Roadmap, Screenshots
-ci/                     # Конфиг для GitHub Actions CI/CD
+.github/                # Конфиг для GitHub Actions CI/CD
 monitoring/             # Настройка метрик
 cloud/                  # Используемые облачные сервисы (Kamatera/Render) и Dockerfile/compose/конфиги nginx
 sre/                    # SRE, метрики, SLO/SLA
@@ -191,7 +228,7 @@ frp-server/             # Fast Reverse Proxy конфиги
 
 ### Как измерялась доступность
 - curl (TTFB / connect / redirect timing)
-- GreatFire / China Firewall Test
+- App In China / WebSitePulse / GreatFire / China Firewall Test
 - высокоскоростные провайдеры РФ (Ростелеком, Дом.ру, Зеленая точка)
 - мобильные сети и првайдеры РФ (3G,LTE / Билайн, Мегафон, МТС, Теле2)
 - browser-level waterfall (DevTools)
@@ -202,6 +239,7 @@ frp-server/             # Fast Reverse Proxy конфиги
 
 ## Следующие шаги
 - SRE (latency tests, SLO, SLA)
+- Synthetic readiness probing (RU/CN vantage points)
 - Monitoring (Loki/Grafana cloud)
 
 
