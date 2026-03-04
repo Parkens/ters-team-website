@@ -47,18 +47,11 @@
 - [x] Аренда VPS/VM в нейтральном регионе (Kamatera, Сингапур).
 - [x] Проверки доступности (curl TTFB/connect), healthcheck, документация.
 
-## Milestone: CI/CD Automation — ✅ выполнено
-- [x] GitHub Actions: build - test - push Docker image.
-- [x] Deploy на VPS/Render runner.
-- [x] Базовые нотификации (pipeline status).
-
-## Milestone: Cloud & SRE (Kamatera/Render) — ✅ выполнено
-- [x] Оценка latency и доступности на single-region VPS (Kamatera).
+## Milestone: Cloud (Kamatera/Render) — ✅ выполнено
+- [x] Оценка доступности веб-сайта на single-region VPS (Kamatera).
 - [x] Выявление сетевых ограничений VPS (single ASN / route degradation).
 - [x] Переход на Render cloud (PaaS) для Anycast-доступности.
 - [x] Стабильная доступность SPA/JS из РФ (включая LTE/5G) и КНР.
-- [x] SLO/SLA, health-checks, синтетические пробы.
-- [x] Runbooks, post-mortems.
 
 ## Milestone: Deterministic Ingress (Render production edge) — ✅ выполнено
 - [x] Отказ от managed CDN ingress (Cloudflare proxy / Netlify Edge).
@@ -71,10 +64,43 @@
 - [x] Подтверждённая доступность: РФ (включая мобильные LTE/5G сети), Материковый Китай (GFW)
 - [x] Корректная работа SPA / JS runtime (Wix Thunderbolt).
 - [x] Proxy-pass для Wix media CDN (устранение блокировок изображений в РФ).
+- [x] Upstream readiness probe (/readyz) для проверки Wix origin перед завершением deployment.
 
-## Milestone: Monitoring & Logging — ⚙️ в работе
+## Milestone: CI/CD Automation — ✅ выполнено
+### Continuous Integration (CI)
+- [x] GitHub Actions: Docker build (BuildKit / buildx).
+- [x] Проверка синтаксиса nginx (`nginx -t`) внутри контейнера.
+- [x] Runtime smoke-test контейнера (`docker run` + health endpoint).
+- [x] Проверка routing logic (Host header / canonical redirects).
+- [x] Docker layer caching (GitHub Actions cache) для ускорения CI.
+- [x] Fail-fast pipeline: остановка CI при любой ошибке конфигурации ingress.
+### Continuous Deployment (CD)
+- [x] Разделение CI и CD workflow.
+- [x] Production deploy через Render deploy hook.
+- [x] Tag-gated deployment (`vX.Y.Z` и pre-release tags).
+- [x] Проверка соответствия tag → `main` branch HEAD (защита от случайного deploy).
+- [x] Concurrency control (исключение параллельных production deploy).
+- [x] Deployment smoke-test после rollout.
+### Deployment Safety
+- [x] Введение liveliness endpoint `/healthz`.
+- [x] Введение readiness endpoint `/readyz`.
+- [x] Post-deploy readiness validation (origin reachability check).
+- [x] Проверка upstream Wix через internal nginx subrequest (`auth_request`).
+- [x] Ошибка CI/CD при upstream errors (4xx/5xx/timeout/TLS failure) с помощью `/readyz`.
+### Release discipline
+- [x] Семантическое версионирование (`vX.Y.Z`).
+- [x] Поддержка pre-release (`vX.Y.Z-rc`, `beta`, `alpha`).
+- [x] Deploy только через tag (исключение случайных production изменений).
+### Pipeline observability
+- [x] GitHub Actions logs как основной источник CI/CD диагностики.
+- [x] Curl-based smoke tests для production readiness.
+- [x] Возможность воспроизведения CI тестов локально через Docker.
+
+## Milestone: Monitoring, Logging & SRE — ⚙️ в работе
 - [ ] Grafana cloud (nginx / container metrics).
 - [ ] Централизованные логи (Loki или ELK).
 - [ ] Alerting (Alertmanager/Telegram).
 - [ ] Upstream timing (nginx logs) - latency dashboards.
 - [ ] Synthetic probes (RU/CN test nodes).
+- [ ] SLO/SLA.
+- [ ] Runbooks, post-mortem documentation.
