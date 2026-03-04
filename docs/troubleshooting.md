@@ -117,7 +117,7 @@ Render использует:
 **Симптом:** Container healthy, но HTTP 502/timeout
 **Причина:** nginx слушает не $PORT, а Render проксирует только на заданный порт
 **Фикс:** listen ${PORT} или EXPOSE 10000
-**Комментарий:** типичная ошибка при миграции с VPS - PaaS.
+**Комментарий:** типичная ошибка при миграции с VPS - PaaS
 
 ## Диагностика из РФ/КНР (рекомендуемый минимум)
 ### Проверка TLS/SNI
@@ -129,13 +129,128 @@ curl -I https://www.ters-team.com/wix-media/...
 
 ## Изображения Wix не загружаются в РФ
 **Симптом:** 
-- Сайт полностью работает (SPA, карусели, меню, JS). 
-- Изображения (hero, carousel, custom media) не отображаются только в РФ.
+- Сайт полностью работает (SPA, карусели, меню, JS)
+- Изображения (hero, carousel, custom media) не отображаются только в РФ
 **Причина:** 
-- Фильтрация image CDN Wix или сторонних media-hosts со стороны провайдеров РФ. 
-- Функционал Wix (JS/CSS) грузится с других доменов, не попавших под блокировки.
+- Фильтрация image CDN Wix или сторонних media-hosts со стороны провайдеров РФ
+- Функционал Wix (JS/CSS) грузится с других доменов, не попавших под блокировки
 **Подтверждение:** 
-- Из Китая - работает. 
+- Из Китая - работает
 - Из РФ - блокируются только media-запросы (media.wixstatic.com, static.wixstatic.com).
-**Решения:** Reverse-proxy media через nginx (proxy_pass для image-хостов) или перенос изображений на собственный CDN/VPS.
+**Решения:** Reverse-proxy media через nginx (proxy_pass для image-хостов) или перенос изображений на собственный CDN/VPS
 **Статус:** Проблема решена настройкой proxy_pass и sub_filter.
+
+## /readyz возвращает 404 или HTML Wix вместо "ok"
+**Симптом:**
+- curl https://www.ters-team.com/readyz возвращает HTTP/2 404 или HTML-страницу Wix
+**Причина:**
+- `/readyz` проксируется напрямую на upstream Wix вместо internal readiness-check. Это происходит если:
+    - отсутствует `auth_request`
+    - upstream location не помечен `internal`
+В этом случае nginx отдаёт реальный ответ Wix.
+**Правильная схема:**
+```
+/readyz
+↓
+auth_request /_readyz_upstream
+↓
+internal proxy to Wix
+```
+**Правильная конфигурация:**
+```nginx
+location = /readyz {
+    access_log off;
+
+    auth_request /_readyz_upstream;
+
+    default_type text/plain;
+    return 200 "ok\n";
+}
+
+location = /_readyz_upstream {
+    internal;
+
+    proxy_pass https://wix_origin/;
+}
+```
+**Комментарий:** `/readyz` должен возвращать только 200 или 503, а не upstream HTML.
+
+## CI зелёный, но CD падает на readiness (`/readyz`)
+**Симптом:** GitHub CI: nginx -t, /healthz, routing checks - проходят, однако CD: Smoke test FAILED: service didn't become ready.
+**Причина:**
+- CI проверяет только локальный контейнер
+- CD дополнительно проверяет: доступность Wix upstream, TLS handshake, правильный Host/SNI routing
+- Если Wix временно недоступен или сеть деградировала - `/readyz` вернёт 503
+**Проверка:**
+- curl -i https://www.ters-team.com/readyz
+**Комментарий:** Это ожидаемое поведение readiness-gated deployment.
+
+## Wix доступен, но /readyz возвращает 503
+**Симптом:**
+- curl https://www.ters-team.com/readyz - HTTP 503 upstream not ready
+- curl https://andyparkens.wixsite.com - работает
+**Причина:** Readiness-проверка выполняется с тем же Host/SNI, что пользовательский трафик:
+- Host: www.ters-team.com
+- SNI: andyparkens.wixsite.com
+Если Wix не принимает этот Host routing - readiness падает.
+**Проверка:** curl -I https://andyparkens.wixsite.com -H "Host: www.ters-team.com".
+**Комментарий:** Это защищает от ошибок multi-tenant routing у SaaS origin.
+
+## duplicate MIME type "text/html"
+**Симптом:** В логах nginx: duplicate MIME type "text/html".
+**Причина:** sub_filter_types включает text/html, который уже добавлен nginx по умолчанию.
+**Фикс:** sub_filter_types text/css;
+**Комментарий:** Не влияет на работу, но уменьшает шум в логах.
+
+## Полная диагностика reverse-proxy цепочки (DNS → TLS → SNI → HTTP)
+**Команда:** curl -v https://www.ters-team.com --resolve www.ters-team.com:443:IP, где IP - IP ingress-сервера.
+**Что показывает:** DNS bypass, TLS handshake, SNI routing, HTTP response, redirect chain.
+**Пример:** curl -v https://www.ters-team.com --resolve www.ters-team.com:443:216.24.x.x.
+**Когда использовать:** подозрение на DNS poisoning, проверка TLS/SNI, диагностика CDN / Anycast маршрута.
+
+## Anycast routing деградация (Render / PaaS edge)
+**Симптом:**
+- из Европы сайт работает быстро
+- из РФ или КНР TTFB резко увеличивается
+- `curl` показывает нормальный `time_connect`, но высокий `time_starttransfer` (time_connect: 0.25 / time_starttransfer: 3.8)
+**Причина:** Anycast ingress-платформы (Render/Fly/Cloudflare) могут менять edge POP в зависимости от BGP-маршрутов.
+В отдельных случаях трафик может:
+- идти через неоптимальный POP
+- проходить дополнительный транзит
+- деградировать из-за маршрута через GFW.
+**Проверка POP:**
+curl -I https://www.ters-team.com
+Смотреть заголовки:
+```
+x-render-origin-server
+x-served-by
+cf-ray (если используется Cloudflare edge)
+```
+**Traceroute диагностика:** traceroute www.ters-team.com или mtr -rw www.ters-team.com
+**Проверка альтернативного пути:** curl -I https://<render-service>.onrender.com
+Если origin быстрее — проблема в DNS / CDN / Anycast маршрутизации.
+**Комментарий:** Это не ошибка nginx или контейнера, а эффект глобальной маршрутизации.
+
+## DNS poisoning / GFW filtering detection
+**Симптом:**
+- сайт недоступен только из КНР
+- или работает нестабильно
+- `curl` иногда возвращает `connection reset`
+**Проверка DNS:**
+- dig www.ters-team.com
+- dig www.ters-team.com @8.8.8.8
+- dig www.ters-team.com @1.1.1.1
+Если ответы отличаются — возможен DNS poisoning.
+**Проверка IP напрямую:**
+- curl -I https://www.ters-team.com --resolve www.ters-team.com:443:IP
+Если IP работает, а домен нет — проблема в DNS.
+**Проверка из внешних vantage points:**
+- GreatFire
+- OONI Probe
+- Globalping
+- RIPE Atlas
+**Типичные признаки GFW:**
+- TCP RST после TLS ClientHello
+- нестабильный handshake
+- DNS ответы с неправильным IP
+**Комментарий:** GFW может фильтровать: конкретные IP, ASN, CDN, DNS, TLS fingerprint - поэтому важно проверять и DNS, и IP напрямую.
