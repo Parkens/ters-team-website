@@ -1,115 +1,356 @@
-# Принятые решения (Decision Log)
+# Architecture Decision Records (ADR)
 
-Формат: **ADR-XXX** - Краткое название - Решение - Причина - Альтернативы - Статус.
+This document tracks architectural decisions made during the development of the ingress infrastructure for **www.ters-team.com**.
 
-**ADR-001 - Миграция веб-сайта с платформы Google на Wix**
-- Решение: Перенести веб-сайт и управление DNS-записями (GoDaddy) на платформу Wix для глобальной доступности.
-- Причина: Google фильтруется GFW на территории КНР.
-- Альтернативы: Перенести на другую china-friendly платформу (меньше функционал/дороже). 
-- Статус: ✅ Выполнено, проблема решена.
+The goal of the project is to ensure **stable global accessibility of a SaaS-origin website (Wix)** from regions with complex network environments, including:
+- Europe / United States
+- Russian ISP networks
+- mainland China (GFW)
 
-**ADR-002 - Миграция из Российской зоны Wix в Турецкую**
-- Решение: Пренос веб-сайта с российской Wix-зоны в турецкую.
-- Причина: Wix оффициально ушел из РФ, блокировка ru-аккаунтов.
-- Альтернативы: Перенос на другую платформу (дольше/дороже). 
-- Статус: ✅ Выполнено, проблема решена.
+Each record documents:
+- decision
+- motivation
+- alternatives considered
+- status
 
-**ADR-003 - Wix ограничен в КНР: Cloudflare как initial edge layer (DNS + proxy)**
-- Решение: Перенести зону в Cloudflare и минимально настроить proxy/workers/rules, аудит TLS/Network/Performance.
-- Причина: Фильтрация Wix IP (AWS/Akami) на территории Материкового Китая (GFW).
-- Альтернативы: Оставаться на Wix DNS/GoDaddy DNS. 
-- Статус: ✅ Выполнено, проблема решена.
+Format:
+```
+ADR-XXX — Title
 
-**ADR-004 - Деградация Cloudflare у части провайдеров РФ (особенно мобильных)**
-- Решение: Балансировка, создание ru под. домена, редирект для пользователей РФ.
-- Причина: Проблема доступности веб-сайта на территории РФ - часть провайдеров фильтрует DNS и IP от Cloudflare.
-- Альтернативы: Переход на выделенный VDS/VPS/VM (дороже).
-- Статус: ⚠️ Выполнено, проблема частично решена, затем проблемы у мобильных операторов РФ. Предположительно связано с TLS 1.3/QUIC/IPv6.
+Decision
+Reason
+Alternatives
+Status
+```
 
-**ADR-005 - Принудительный IPv4 на уровне Nginx**
-- Решение: `resolver ... ipv6=off;` + `proxy_ssl_server_name on;` + корректные `Host`/`X-Forwarded-*`.
-- Причина: Ошибки `connect() failed (101)` при попытке IPv6 к upstream. 
-- Альтернативы: Включение системного IPv6; туннелирование IPv6.
-- Статус: ✅ Выполнено, proxy стабилен, необходима проверка через публичный доступ.
+## Architecture evolution
+```
+flowchart TD
+A[Google Sites]
+B[Wix SaaS origin]
+C[Cloudflare DNS + Proxy]
+D[Cloudflare Tunnel]
+E[Netlify CDN + Edge Functions]
+F[FRP Transport Layer]
+G[Kamatera VPS Reverse Proxy]
+H[Render Ingress + nginx]
+I[Final Architecture]
 
-**ADR-006 - Cloudflare Tunnel: HTTP/2 и IPv4**
-- Решение: `cloudflared ... --protocol http2 --edge-ip-version 4` - стабильное соединение.
-- Причина: QUIC/UDP/IPv6 нестабилен (WSL, мобильные сети).
-- Альтернативы: Оставаться на QUIC; настраивать UDP в сети.
-- Статус: ⚠️ Выполнено, но с мобильных сетей долго/недоступно
+A --> B
+B --> C
+C --> D
+D --> E
+E --> F
+F --> G
+G --> H
+H --> I
+```
 
-**ADR-007 - Netlify как зеркало (iframe)**
-- Решение: Подключить `ru.ters-team.com` на Netlify; iframe на основной веб-сайт.
-- Причина: Обеспечение доступности из РФ.
-- Альтернативы: Полный reverse-proxy на Netlify Edge Functions; VPS.
-- Статус: ⚠️ Выполнено, но частично: скорость/картинки/SEO - ограничения iframe. 
+Final production architecture:
+```
+Client
+↓
+GoDaddy DNS
+↓
+Render ingress
+↓
+Docker container
+↓
+nginx reverse proxy
+↓
+Wix SaaS origin
+```
 
-**ADR-008 - Перенос NS на Netlify DNS + настройка Edge Function**
-- Решение: Делегировать NS к Netlify NSONE, затем деплоить конфиг Edge Function для полного revers proxy.
-- Причина: Необходимо сделать унифицированный доступ к сайту через основной домен для сохранения корректного SEO.
-- Альтернативы: использовать другие CDN (сложно найти универсальный вариант для глобальной доступности).
-- Статус: ⚠️ Выполнено частично, Edge Functions ломается/некорректно тянет контент с оригинального веб-сайта на Wix.
+# Decision Log
 
-**ADR-009 - Отказ от Netlify + возврат на Wix**
-- Решение: Остановка варианта с Edge Function на Netlify, возврат на Wix из-за фильтрации Netlify со стороны GFW.
-- Причина: Netlify частично блокируется в КНР (RST/DNS poisoning).
-- Альтернативы: Продолжать с Netlify без территори Материкового Китая.
-- Статус: ✅ Возврат на Wix завершён.
+## ADR-001 — Migration from Google Sites to Wix
+### Decision
+Migrate the website and DNS management to the Wix platform.
+### Reason
+Google services are partially filtered under the Great Firewall in mainland China, causing unreliable accessibility.
+### Alternatives
+- remain on Google infrastructure  
+- migrate to another China-friendly platform (limited functionality / higher price $)
+### Status
+✅ Implemented
 
-**ADR-010 - FRP (Fast Reverse Proxy) как временный транспортный слой**
-- Решение: Использовать FRP (frpc - frps) для проброса HTTP(S) трафика с локального/edge-хоста на публичную точку доступа.
-- Причина: Быстро получить публичную точку входа без поднятия полноценного VPS; удобно для экспериментов и отладки доступности из РФ/КНР.
-- Альтернативы: прямой VPS reverse-proxy.
-- Статус: ✅ Выполнено, используется как временное решение/PoC.
 
-**ADR-011 - VPS + собственный reverse-proxy на Kamatera cloud**
-- Решение: Использовать VPS в Kamatera (сингапур) как транспортный reverse-proxy слой (Docker-proxy).
-- Причина: Полный контроль над IPv4/IPv6, TLS, nginx. Отсутствие массовых блокировок IP Kamatera в РФ и КНР.
-- Альтернативы: Hetzner (частично фильтруется), OVH (хуже маршрут в КНР), Managed CDN-решения с China Network (дороже, сложнее).
-- Статус: ✅ Выполнено (PoC + рабочая конфигурация), однако слишком большой latency в КНР (>50s).
+## ADR-002 — Migration from Russian Wix region to Turkish region
+### Decision
+Move the Wix account from the Russian region to the Turkish region.
+### Reason
+Wix discontinued support for Russian accounts, creating a risk of account suspension.
+### Alternatives
+- migrate to another SaaS platform  (time consuming / higher price $)
+- maintain the Russian-region account (high risk)
+### Status
+✅ Implemented
 
-**ADR-012 - Render cloud как основной production edge**
-- Решение: Деплой nginx reverse-proxy в Render cloud (Docker, always-on instance).
-- Причина:
-    - Есть сервера в нейтральной зоне (Сингапур)
-    - Anycast-подобная сеть и хорошие глобальные маршруты.
-    - Отличная доступность из РФ (включая мобильных операторов).
-    - Хорошая скорость из КНР благордаря Anycast-доступности через облачный PaaS-провайдер (Render).
-    - Минимум операционных накладных расходов.
-- Альтернативы: Fly.io (хуже в КНР), VPS + ручная балансировка (высокоий уровень latency).
-- Статус: ✅ Выполнено, выбрано как основное решение.
 
-**ADR-013 - Канонизация домена на уровне proxy (www)**
-- Решение: Принудительный редирект на www.ters-team.com на уровне nginx.
-- Причина: Устранение двойной каноникализации (Wix + proxy). Контроль SEO и единый entrypoint.
-- Альтернативы: Отдать канонизацию Wix.
-- Статус: ✅ Выполнено (редирект ~1s допустим).
+## ADR-003 — Cloudflare as initial edge layer
+### Decision
+Move DNS and proxy functionality to Cloudflare and test edge routing through Cloudflare infrastructure.
+### Reason
+Direct Wix IP addresses (AWS/Akamai) were partially filtered in mainland China.
+### Alternatives
+- continue using GoDaddy DNS  
+- use Wix DNS directly
+### Status
+⚠️ Used temporarily. Later removed due to degraded accessibility in Russian ISP networks.
 
-**ADR-014 - HTTP/2 без QUIC**
-- Решение: Использовать HTTP/2 поверх TCP, без HTTP/3/QUIC.
-- Причина: QUIC массово режется в РФ и КНР. HTTP/2 стабилен и предсказуем.
-- Альтернативы: HTTP/1.1 (хуже TTFB, HOL blocking).
-- Статус: ✅ Выполнено.
 
-**ADR-015 - Добавление эндпоинтов Liveness/Readiness для проверок ingress-proxy**
-- Решение: Ввести два отдельных endpoint’а:
-    - `/healthz` - liveness (nginx container running, config loaded)
-    - `/readyz` - readiness (проверка доступности upstream Wix через internal subrequest `auth_request /_readyz_upstream`)
-- Причина: Ранее smoke-check в CI/CD мог быть зелёным при живом nginx, но фактически прокси мог не обслуживать трафик из-за проблем с upstream (DNS/TLS/SNI/route/HTTP failures). Для production deploy нужен детерминированный сигнал пользовательский путь работает.
-- Альтернативы:
-    - Использовать только `/healthz` (ложноположительные деплои при деградации upstream).
-    - Использовать прямой proxy `/readyz` на Wix (возвращает upstream-коды и может давать 404 при доступном upstream; хуже семантика).
-    - Перенести readiness на уровень Render health-check (риск crash-loop при проблемах upstream).
-- Статус: ✅ Выполнено, используется в CD как сигнал работоспособности.
+## ADR-004 — Cloudflare degradation in Russian networks
+### Decision
+Attempt mitigation strategies including subdomain routing and regional fallback.
+### Reason
+Some Russian ISPs (especially mobile carriers) filter or degrade Cloudflare IP ranges.
+### Alternatives
+- dedicated VPS ingress  
+- alternative CDN providers
+### Status
+⚠️ Temporary workaround. Cloudflare was later removed from the architecture.
 
-**ADR-016 - Централизованый деплой через Теги**
-- Решение: Перейти на tag-gated деплой в production:
-    - CD workflow запускается только на push тегов vX.Y.Z и vX.Y.Z-<pre>.
-    - Доп. проверка: tag commit должен равняться HEAD ветки main.
-    - CI и CD разделены на разные workflow.
-- Причина: Tag-gated позволяет деплоить из CLI и делает процесс более предсказуемым. Проверка `“tag == HEAD main”` исключает деплой произвольных коммитов/веток.
-- Альтернативы:
-    - Release-gated deploy (лишняя ручная операция и не всегда удобно автоматизировать).
-    - Tag должен быть в истории main (менее строго и можно тегнуть старый коммит).
-    - Деплой на каждый push в main (выше риск случайных прод-выкатов).
-- Статус: ✅ Выполнено, используется для production deploy.
+
+## ADR-005 — Enforce IPv4 upstream connections
+### Decision
+Disable IPv6 resolution in nginx:
+```
+resolver ... ipv6=off;
+```
+Enable correct TLS routing:
+```
+proxy_ssl_server_name on;
+```
+### Reason
+IPv6 upstream connections produced errors:
+```
+connect() failed (101: Network unreachable)
+```
+### Alternatives
+- enable system IPv6 routing  
+- tunnel IPv6 connectivity
+### Status
+✅ Implemented
+
+
+## ADR-006 — Cloudflare Tunnel transport configuration
+### Decision
+Force HTTP/2 over TCP instead of QUIC:
+```
+cloudflared --protocol http2 --edge-ip-version 4
+```
+### Reason
+QUIC (UDP) transport was unstable in several environments:
+- mobile networks  
+- WSL networking  
+- filtered networks
+### Alternatives
+- continue using QUIC  
+- configure UDP routing
+### Status
+⚠️ Temporary experiment
+
+
+## ADR-007 — Netlify mirror via iframe
+### Decision
+Deploy a Netlify subdomain (`ru.ters-team.com`) embedding the Wix site via iframe.
+### Reason
+Provide accessibility for Russian networks affected by CDN filtering.
+### Alternatives
+- full reverse proxy via Netlify Edge Functions  
+- VPS-based proxy
+### Status
+⚠️ Partial solution. Limited by iframe constraints and SEO issues.
+
+
+## ADR-008 — Netlify DNS + Edge Functions reverse proxy
+### Decision
+Delegate DNS to Netlify and deploy an Edge Function reverse proxy.
+### Reason
+Maintain a unified domain entry point while proxying Wix content.
+### Alternatives
+- alternative CDN providers  
+- VPS ingress proxy
+### Status
+⚠️ Experiment failed. Edge functions did not reliably proxy Wix content.
+
+
+## ADR-009 — Removal of Netlify architecture
+### Decision
+Remove Netlify from the infrastructure.
+### Reason
+Netlify infrastructure was partially blocked in mainland China (RST packets and DNS poisoning).
+### Alternatives
+- continue using Netlify without Chinese accessibility
+### Status
+✅ Implemented
+
+
+## ADR-010 — FRP (Fast Reverse Proxy) transport layer
+### Decision
+Use FRP (`frpc / frps`) as a temporary transport layer.
+### Reason
+Provide a quick public ingress point for experimentation without deploying a full VPS.
+### Alternatives
+- direct VPS reverse proxy
+### Status
+✅ Used as a temporary PoC.
+
+
+## ADR-011 — VPS ingress on Kamatera
+### Decision
+Deploy an nginx reverse proxy on a Kamatera VPS (Singapore).
+### Reason
+Full control over:
+- IPv4 / IPv6  
+- TLS  
+- routing
+Kamatera IP ranges were not heavily filtered in Russia or China.
+### Alternatives
+- Hetzner (partially blocked in Russia)
+- OVH  
+- CDN providers with China networks
+### Status
+⚠️ PoC completed but high latency remained.
+
+
+## ADR-012 — Render as production ingress platform
+### Decision
+Deploy the nginx reverse proxy in Render as a Docker container.
+### Reason
+Render provides:
+- globally optimized routing  
+- stable accessibility from Russian networks  
+- improved reachability from mainland China  
+- low operational overhead $
+### Alternatives
+- Fly.io  (limited in mainland China / higher price $)
+- multi-region VPS deployment
+### Status
+✅ Production architecture
+
+
+## ADR-013 — Domain canonicalization at ingress
+### Decision
+Canonicalize traffic to:
+```
+www.ters-team.com
+```
+using nginx redirects.
+### Reason
+Ensure consistent SEO signals and a single public entry point.
+### Alternatives
+- allow Wix to manage canonical redirects
+### Status
+✅ Implemented
+
+
+## ADR-014 — Use HTTP/2 without QUIC
+### Decision
+Use HTTP/2 over TCP and avoid HTTP/3 / QUIC.
+### Reason
+QUIC (UDP transport) is frequently degraded or filtered in:
+- Russian mobile networks  
+- Great Firewall environments
+### Alternatives
+- HTTP/1.1
+### Status
+✅ Implemented
+
+
+## ADR-015 — Liveness and readiness endpoints
+### Decision
+Introduce two health endpoints:
+```
+/healthz  → ingress liveness
+/readyz   → upstream availability
+```
+### Reason
+Basic smoke tests could pass even when the upstream SaaS origin was unavailable.
+**The readiness check verifies:****
+- TCP connectivity  
+- TLS handshake  
+- Host/SNI routing  
+- HTTP response
+### Alternatives
+- single health endpoint  
+- platform-level health checks
+### Status
+✅ Implemented
+
+
+## ADR-016 — Tag-gated production deployment
+### Decision
+Deploy production only from Git tags:
+```
+vX.Y.Z
+```
+with an additional constraint:
+```
+tag commit must equal HEAD of main
+```
+### Reason
+Prevents accidental deployments and ensures reproducible releases.
+### Alternatives
+- deploy on every push to main  
+- release-triggered deployments
+### Status
+✅ Implemented
+
+
+**ADR-017 — Gcore DNS / GeoDNS experiment**
+### Decision
+Test Gcore DNS with dynamic routing (GeoDNS) for region-aware ingress.
+### Reason
+Attempt to improve accessibility from China and Russia using managed DNS routing.
+### Alternatives
+- GoDaddy DNS (static records), CDN-managed DNS (Cloudflare).
+### Outcome
+DNS resolution became unstable from mainland China (inconsistent responses / intermittent reachability).
+### Resolution
+Restore authoritative DNS to GoDaddy and simplify DNS architecture.
+### Status
+⚠️ Experiment completed, not used in production.
+
+
+## ADR-018 — Avoid GeoDNS and DNS routing logic
+### Decision
+Do not use GeoDNS or country-based DNS responses.
+### Reason
+GeoDNS increases architectural complexity and can cause inconsistent resolver behavior in filtering environments.
+### Alternatives
+- regional DNS routing  
+- country-based subdomains
+### Status
+✅ Implemented
+
+
+## ADR-019 — Simplified DNS architecture (single ingress IP)
+### Decision
+Use the same ingress IP for both root and www domains:
+```
+www.ters-team.com  A  216.24.57.3
+ters-team.com      A  216.24.57.3
+```
+### Reason
+This simplifies DNS behavior and avoids resolver inconsistencies in networks with aggressive DNS caching.
+Domain canonicalization is handled by the ingress proxy.
+### Alternatives
+- CNAME flattening  
+- GeoDNS routing (mainland China limeted)   
+- separate ingress IPs  (better to keep working IPs for the fallback)
+### Status
+✅ Production configuration
+
+
+## ADR-020 — Minimal nginx ingress configuration
+### Decision
+Use a minimal nginx reverse proxy configuration and avoid complex caching or CDN-style rewriting logic.
+### Reason
+The SaaS origin (Wix) already provides its own CDN layer. Additional proxy complexity reduced stability during testing.
+### Alternatives
+- aggressive caching  
+- complex asset rewriting  
+- edge logic
+### Status
+✅ Implemented
