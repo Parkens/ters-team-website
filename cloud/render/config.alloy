@@ -20,8 +20,8 @@ loki.source.file "nginx_access" {
 loki.process "nginx" {
   stage.json {
     expressions = {
-      ts        = "ts"
-      client_ip = "client_ip"
+      ts        = "ts",
+      client_ip = "client_ip",
     }
   }
 
@@ -44,12 +44,12 @@ loki.process "nginx" {
 
   stage.labels {
     values = {
-      geoip_country_name                   = ""
-      geoip_country_code                   = ""
-      geoip_continent_name                 = ""
-      geoip_continent_code                 = ""
-      geoip_autonomous_system_number       = ""
-      geoip_autonomous_system_organization = ""
+      geoip_country_name                   = "",
+      geoip_country_code                   = "",
+      geoip_continent_name                 = "",
+      geoip_continent_code                 = "",
+      geoip_autonomous_system_number       = "",
+      geoip_autonomous_system_organization = "",
     }
   }
 
