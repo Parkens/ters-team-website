@@ -2,7 +2,7 @@ FROM grafana/alloy:latest AS alloy
 
 FROM nginx:stable-alpine
 
-COPY --from=alloy /bin/alloy /usr/local/bin/alloy
+COPY --from=alloy /usr/bin/alloy /usr/local/bin/alloy
 
 RUN mkdir -p /etc/alloy /var/log/nginx /var/lib/alloy/data
 
