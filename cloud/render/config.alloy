@@ -1,0 +1,44 @@
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+loki.source.file "nginx_access" {
+  targets = [
+    {
+      __path__ = "/var/log/nginx/access.json",
+      job      = "nginx",
+      service  = "ters-ingress",
+      env      = "prod",
+      site     = "www.ters-team.com",
+    },
+  ]
+
+  forward_to = [loki.process.nginx.receiver]
+}
+
+loki.process "nginx" {
+  stage.json {
+    expressions = {
+      ts = "ts",
+    }
+  }
+
+  stage.timestamp {
+    source = "ts"
+    format = "RFC3339"
+  }
+
+  forward_to = [loki.write.grafana_cloud.receiver]
+}
+
+loki.write "grafana_cloud" {
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_LOKI_URL")
+
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_LOKI_USERNAME")
+      password = sys.env("GRAFANA_CLOUD_LOKI_PASSWORD")
+    }
+  }
+}
