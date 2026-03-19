@@ -1,6 +1,6 @@
 FROM grafana/alloy:latest AS alloy
 
-FROM nginx:stable-alpine
+FROM nginx:stable
 
 COPY --from=alloy /usr/bin/alloy /usr/local/bin/alloy
 
