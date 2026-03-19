@@ -20,13 +20,37 @@ loki.source.file "nginx_access" {
 loki.process "nginx" {
   stage.json {
     expressions = {
-      ts = "ts",
+      ts        = "ts"
+      client_ip = "client_ip"
     }
   }
 
   stage.timestamp {
     source = "ts"
     format = "RFC3339"
+  }
+
+  stage.geoip {
+    source  = "client_ip"
+    db      = "/etc/alloy/geoip/ip-to-country.mmdb"
+    db_type = "country"
+  }
+
+  stage.geoip {
+    source  = "client_ip"
+    db      = "/etc/alloy/geoip/ip-to-asn.mmdb"
+    db_type = "asn"
+  }
+
+  stage.labels {
+    values = {
+      geoip_country_name                   = ""
+      geoip_country_code                   = ""
+      geoip_continent_name                 = ""
+      geoip_continent_code                 = ""
+      geoip_autonomous_system_number       = ""
+      geoip_autonomous_system_organization = ""
+    }
   }
 
   forward_to = [loki.write.grafana_cloud.receiver]
