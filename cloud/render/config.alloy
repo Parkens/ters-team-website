@@ -49,7 +49,7 @@ loki.process "nginx" {
       geoip_continent_name                 = "",
       geoip_continent_code                 = "",
       geoip_autonomous_system_number       = "",
-      geoip_autonomous_system_organization = "",
+      geoip_autonomous_system_organization = ""
     }
   }
 
