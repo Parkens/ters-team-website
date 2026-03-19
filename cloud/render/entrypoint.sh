@@ -1,6 +1,11 @@
 #!/bin/sh
 set -eu
 
+# allow overriding entrypoint command (`docker run image nginx -t`)
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
+
 mkdir -p /var/log/nginx /var/lib/alloy/data
 touch /var/log/nginx/access.json
 
