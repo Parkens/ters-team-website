@@ -10,8 +10,8 @@ GEOIP_DIR="/etc/alloy/geoip"
 COUNTRY_DB="$GEOIP_DIR/ip-to-country.mmdb"
 ASN_DB="$GEOIP_DIR/ip-to-asn.mmdb"
 
-COUNTRY_URL="https://raw.githubusercontent.com/iplocate/ip-address-databases/main/ip-to-country/ip-to-country.mmdb"
-ASN_URL="https://raw.githubusercontent.com/iplocate/ip-address-databases/main/ip-to-asn/ip-to-asn.mmdb"
+COUNTRY_URL="https://raw.githubusercontent.com/sapics/ip-location-db/main/geolite2-country/geolite2-country.mmdb"
+ASN_URL="https://raw.githubusercontent.com/sapics/ip-location-db/main/geolite2-asn/geolite2-asn.mmdb"
 
 mkdir -p /var/log/nginx /var/lib/alloy/data "$GEOIP_DIR"
 touch /var/log/nginx/access.json
