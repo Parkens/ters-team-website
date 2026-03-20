@@ -12,7 +12,7 @@ touch /var/log/nginx/access.json
 COUNTRY_DB="/etc/alloy/geoip/ip-to-country.mmdb"
 ASN_DB="/etc/alloy/geoip/ip-to-asn.mmdb"
 
-COUNTRY_URL="https://cdn.jsdelivr.net/npm/@ip-location-db/geolite2-geo-whois-asn-country-mmdb/geolite2-geo-whois-asn-country.mmdb"
+COUNTRY_URL="https://cdn.jsdelivr.net/npm/@ip-location-db/geolite2-country-mmdb/geolite2-country-ipv4.mmdb"
 ASN_URL="https://cdn.jsdelivr.net/npm/@ip-location-db/geolite2-asn-mmdb/geolite2-asn.mmdb"
 
 download_file() {
