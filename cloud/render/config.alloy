@@ -20,18 +20,12 @@ loki.source.file "nginx_access" {
 loki.process "nginx" {
   stage.json {
     expressions = {
-      ts        = "ts",
-      client_ip = "client_ip",
-      request_time = "request_time",
+      ts                   = "ts",
+      client_ip            = "client_ip",
+      request_time         = "request_time",
       upstream_header_time = "upstream_header_time",
-    }
-  }
-
-  stage.convert {
-    expressions = {
-      request_time           = "float",
-      upstream_header_time   = "float",
-      upstream_response_time = "float",
+      upstream_response_time = "upstream_response_time",
+      status               = "status"
     }
   }
 
