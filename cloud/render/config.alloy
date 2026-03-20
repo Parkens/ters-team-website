@@ -22,6 +22,16 @@ loki.process "nginx" {
     expressions = {
       ts        = "ts",
       client_ip = "client_ip",
+      request_time = "request_time",
+      upstream_header_time = "upstream_header_time",
+    }
+  }
+
+  stage.convert {
+    expressions = {
+      request_time           = "float",
+      upstream_header_time   = "float",
+      upstream_response_time = "float",
     }
   }
 
