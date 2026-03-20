@@ -6,7 +6,7 @@ COPY --from=alloy /usr/bin/alloy /usr/local/bin/alloy
 
 RUN mkdir -p /etc/alloy /etc/alloy/geoip /var/log/nginx /var/lib/alloy/data \
     && apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && apt-get install -y --no-install-recommends curl ca-certificates gzip \
     && rm -rf /var/lib/apt/lists/*
 
 COPY nginx.conf /etc/nginx/nginx.conf

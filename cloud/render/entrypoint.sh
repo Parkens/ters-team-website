@@ -12,7 +12,7 @@ touch /var/log/nginx/access.json
 COUNTRY_DB="/etc/alloy/geoip/ip-to-country.mmdb"
 ASN_DB="/etc/alloy/geoip/ip-to-asn.mmdb"
 
-COUNTRY_URL="https://cdn.jsdelivr.net/npm/@ip-location-db/geolite2-country-mmdb/geolite2-country-ipv4.mmdb"
+COUNTRY_URL="https://cdn.jsdelivr.net/npm/geolite2-country/GeoLite2-Country.mmdb.gz"
 ASN_URL="https://cdn.jsdelivr.net/npm/@ip-location-db/geolite2-asn-mmdb/geolite2-asn.mmdb"
 
 download_file() {
@@ -32,12 +32,35 @@ download_file() {
   return 1
 }
 
+download_country_gz() {
+  url="$1"
+  dst="$2"
+
+  tmp_gz="$(mktemp)"
+  tmp_mmdb="$(mktemp)"
+
+  if curl -fsSL --max-time 30 "$url" -o "$tmp_gz"; then
+    if [ -s "$tmp_gz" ]; then
+      if gzip -dc "$tmp_gz" > "$tmp_mmdb"; then
+        if [ -s "$tmp_mmdb" ]; then
+          mv "$tmp_mmdb" "$dst"
+          rm -f "$tmp_gz"
+          return 0
+        fi
+      fi
+    fi
+  fi
+
+  rm -f "$tmp_gz" "$tmp_mmdb"
+  return 1
+}
+
 echo "Updating GeoIP databases..."
 
 COUNTRY_OK=0
 ASN_OK=0
 
-if download_file "$COUNTRY_URL" "$COUNTRY_DB"; then
+if download_country_gz "$COUNTRY_URL" "$COUNTRY_DB"; then
   echo "Country DB updated"
   COUNTRY_OK=1
 else
@@ -77,7 +100,7 @@ ALLOY_PID="$!"
 
     echo "Refreshing GeoIP databases..."
 
-    if download_file "$COUNTRY_URL" "$COUNTRY_DB"; then
+    if download_country_gz "$COUNTRY_URL" "$COUNTRY_DB"; then
       echo "Country DB refreshed"
     else
       echo "Country DB refresh failed"
