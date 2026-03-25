@@ -20,14 +20,41 @@ loki.source.file "nginx_access" {
 loki.process "nginx" {
   stage.json {
     expressions = {
-      ts        = "ts",
-      client_ip = "client_ip",
+      ts                     = "ts",
+      client_ip              = "client_ip",
+      request_time           = "request_time",
+      upstream_header_time   = "upstream_header_time",
+      upstream_response_time = "upstream_response_time",
+      status                 = "status",
+      request_method         = "request_method",
+      request_uri            = "request_uri",
+      uri                    = "uri",
+      args                   = "args",
+      referer                = "referer",
+      user_agent             = "user_agent",
+      accept                 = "accept",
+      accept_language        = "accept_language",
+      sec_fetch_site         = "sec_fetch_site",
+      sec_fetch_mode         = "sec_fetch_mode",
+      sec_fetch_dest         = "sec_fetch_dest",
+      sec_ch_ua              = "sec_ch_ua",
+      sec_ch_ua_mobile       = "sec_ch_ua_mobile",
+      sec_ch_ua_platform     = "sec_ch_ua_platform",
+      request_id             = "request_id",
+      is_probe               = "is_probe",
+      req_class              = "req_class",
     }
   }
 
   stage.timestamp {
     source = "ts"
     format = "RFC3339"
+  }
+
+  stage.labels {
+    values = {
+      req_class = "",
+    }
   }
 
   forward_to = [loki.write.grafana_cloud.receiver]
