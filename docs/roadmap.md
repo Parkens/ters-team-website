@@ -182,15 +182,18 @@ Benefits:
 - fewer resolver inconsistencies
 - improved stability in networks with aggressive DNS caching
 - easier diagnostics and operational maintenance
+- fallback to other ips from validated ip pull in case of DPI / SNI filtering
 
 **This configuration is currently used in production.**
 
 
-## Milestone: Monitoring, Logging & SRE — ⚙️ в работе
-- [ ] Grafana cloud (nginx / container metrics).
-- [ ] Централизованные логи (Loki или ELK).
-- [ ] Alerting (Alertmanager/Telegram).
-- [ ] Upstream timing (nginx logs) - latency dashboards.
-- [ ] Synthetic probes (RU/CN test nodes).
-- [ ] SLO/SLA.
-- [ ] Runbooks, post-mortem documentation.
+## Milestone: Monitoring, Logging & SRE — ✅ Completed
+- [x] Grafana cloud (nginx / container metrics).
+- [x] Logs (Loki or ELK).
+- [x] Upstream timing (nginx logs) - latency dashboards.
+- [x] Synthetic probes (EU/USA/Asia/RU/CN test nodes).
+- [x] SLO/SLA.
+- [x] Runbooks, post-mortem documentation.
+
+## Milestone: Alerting — ⚙️ In progress
+- [ ] Alerts via Alertmanager (Telegram / Slack).

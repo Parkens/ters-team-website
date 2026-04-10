@@ -298,7 +298,7 @@ Prevents accidental deployments and ensures reproducible releases.
 ✅ Implemented
 
 
-**ADR-017 — Gcore DNS / GeoDNS experiment**
+## ADR-017 — Gcore DNS / GeoDNS experiment
 ### Decision
 Test Gcore DNS with dynamic routing (GeoDNS) for region-aware ingress.
 ### Reason

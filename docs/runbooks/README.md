@@ -74,6 +74,8 @@ Wix SaaS origin
 
 ### Diagnostics
 - `basic-diagnostics.md` — basic checks for HTTP, DNS, and latency
+- `local-netwok-checks` — local checks for HTTP response and latency
+- `global-availability-checks` — global checks for HTTP response and tracing
 
 ### Reverse proxy
 - `nginx-upstream-connectivity.md` — nginx upstream connection issues
