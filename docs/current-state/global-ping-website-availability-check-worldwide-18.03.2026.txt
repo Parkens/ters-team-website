@@ -1,0 +1,52 @@
+Globalping report for https://www.ters-team.com | 2026-03-18 20:21:40 +07 | 50 probes
+
+Falkenstein, DE [Western Europe] [Hetzner Online]       | HTTP 200 | FRA | 489ms
+Helsinki, FI [Northern Europe] [Hetzner Online]         | HTTP 200 | FRA | 467ms
+Buffalo, US [Northern America] [HostPapa]               | HTTP 200 | YYZ | 603ms
+Nuremberg, DE [Western Europe] [netcup]                 | HTTP 200 | FRA | 438ms
+Ashburn, US [Northern America] [Amazon.com]             | HTTP 200 | IAD | 519ms
+Amsterdam, NL [Western Europe] [DELUXHOST]              | HTTP 200 | AMS | 444ms
+Frankfurt, DE [Western Europe] [Oracle]                 | HTTP 200 | FRA | 480ms
+Roubaix, FR [Western Europe] [OVH]                      | HTTP 200 | AMS | 451ms
+Los Angeles, US [Northern America] [HostPapa]           | HTTP 200 | LAX | 417ms
+Nuremberg, DE [Western Europe] [Hetzner Online]         | HTTP 200 | FRA | 426ms
+Sandefjord, NO [Northern Europe] [Gigahost]             | HTTP 200 | AMS | 551ms
+Spokane, US [Northern America] [Redoubt Networks]       | HTTP 200 | SEA | 494ms
+Oradea, RO [Eastern Europe] [Andrei Tiberiu Holt]       | HTTP 200 | OTP | 494ms
+Singapore, SG [South-eastern Asia] [Oracle]             | HTTP 200 | SIN | 441ms
+Hong Kong, HK [Eastern Asia] [Hytron Network Services]  | HTTP 200 | HKG | 443ms
+Mumbai, IN [Southern Asia] [HOSTDZIRE WEB SERVICES]     | HTTP 200 | BOM | 600ms
+Dublin, IE [Northern Europe] [HostPapa]                 | HTTP 200 | DUB | 460ms
+Bucharest, RO [Eastern Europe] [M247]                   | HTTP 200 | OTP | 554ms
+Houston, US [Northern America] [Snaju Development]      | HTTP 200 | DFW | 629ms
+Sao Paulo, BR [South America] [Oracle]                  | HTTP 200 | GRU | 725ms
+Montreal, CA [Northern America] [Rica Web Services]     | HTTP 200 | YUL | 598ms
+San Jose, US [Northern America] [Oracle]                | HTTP 200 | SJC | 760ms
+Manassas, US [Northern America] [netcup]                | HTTP 200 | IAD | 535ms
+Phoenix, US [Northern America] [Oracle]                 | HTTP 200 | LAX | 430ms
+Tokyo, JP [Eastern Asia] [xTom]                         | HTTP 200 | NRT | 593ms
+Chiba, JP [Eastern Asia] [Oracle]                       | HTTP 200 | NRT | 565ms
+Ashburn, US [Northern America] [Oracle]                 | HTTP 200 | IAD | 936ms
+Amsterdam, NL [Western Europe] [Oracle]                 | HTTP 200 | AMS | 495ms
+Singapore, SG [South-eastern Asia] [LeaseWeb]           | HTTP 200 | SIN | 268ms
+Mumbai, IN [Southern Asia] [Oracle]                     | HTTP 200 | BOM | 490ms
+Frankfurt, DE [Western Europe] [synlinq.de]             | HTTP 200 | FRA | 424ms
+Los Angeles, US [Northern America] [MULTACOM]           | HTTP 200 | LAX | 797ms
+Ashburn, US [Northern America] [Hetzner Online]         | HTTP 200 | IAD | 515ms
+New York, US [Northern America] [M247]                  | HTTP 200 | EWR | 510ms
+Kansas City, US [Northern America] [WholeSale Internet] | HTTP 200 | ORD | 590ms
+Dusseldorf, DE [Western Europe] [Realtox Media]         | HTTP 200 | DUS | 452ms
+Timisoara, RO [Eastern Europe] [UNMANAGED]              | HTTP 200 | VIE | 463ms
+London, GB [Northern Europe] [Oracle]                   | HTTP 200 | LHR | 434ms
+Stockholm, SE [Northern Europe] [Hollander & Jacobsen]  | HTTP 200 | ARN | 502ms
+Chisinau, MD [Eastern Europe] [ALEXHOST]                | HTTP 200 | KIV | 554ms
+Calais, FR [Western Europe] [OVH]                       | HTTP 200 | CDG | 481ms
+Toronto, CA [Northern America] [HostBilby]              | HTTP 200 | YYZ | 530ms
+Dallas, US [Northern America] [HostPapa]                | HTTP 200 | DFW | 465ms
+Sofia, BG [Eastern Europe] [IncogNET]                   | HTTP 200 | SOF | 484ms
+Santa Clara, US [Northern America] [HostPapa]           | HTTP 200 | SJC | 429ms
+Vienna, AT [Western Europe] [T-Mobile]                  | HTTP 200 | VIE | 477ms
+Berlin, DE [Western Europe] [Misaka Network]            | HTTP 200 | TXL | 429ms
+Hyderabad, IN [Southern Asia] [Oracle]                  | HTTP 200 | MAA | 459ms
+Dunkerque, FR [Western Europe] [OVH]                    | HTTP 200 | CDG | 641ms
+Chicago, US [Northern America] [HostHatch]              | HTTP 200 | ORD | 480ms
