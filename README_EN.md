@@ -7,7 +7,7 @@ A project repository focused on ensuring the availability, stability, and securi
 This project did not begin as an attempt to simply "speed up a website." It emerged as an engineering effort to provide **stable access to the same SaaS platform (Wix)** from regions with radically different network and political realities: **the United States / Europe / Asia, Russia, and mainland China**. Most standard CDN / edge solutions such as Cloudflare, Netlify, and Gcore showed **partial or complete inaccessibility** in at least one of these regions.
 
 
-![Status](https://img.shields.io/badge/status-in%20progress-yellow)
+![Status](https://img.shields.io/badge/status-completed-green)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
@@ -306,7 +306,7 @@ Expected result: `HTTP/1.1 200 OK`
 
 
 ## License
-MIT.
+see LICENSE.
 
 ---
 
