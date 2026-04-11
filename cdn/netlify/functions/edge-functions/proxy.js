@@ -35,13 +35,13 @@ function chooseCacheHeaders(pathname, upstreamHeaders){
 }
 
 function rewriteHtml(html){
-  // <base href="https://andy.../website/"> -> <base href="/">
+  // <base href="https://andy.../website/"> - <base href="/">
   html = html.replace(/<base\s+href=(['"])https:\/\/andyparkensw\.wixsite\.com\/website\/?\1\s*\/?>/i, '<base href="/" />');
 
-  // protocol-relative -> https
+  // protocol-relative - https
   html = html.replace(/(["'(])\/\/(static\.wixstatic\.com|[\w.-]*wixsite\.com)(\/[^"'()\s>]*)/gi, (m,p1,host,rest)=>`${p1}https://${host}${rest}`);
 
-  // absolute wix urls -> router
+  // absolute wix urls - router
   html = html.replace(/https:\/\/((?:static\.wixstatic\.com|[\w.-]*wixsite\.com))([^\s"'<>)]*)/gi, (_m,host,rest)=>`/__p__/https/${host}${rest}`);
 
   // explicit base to root
@@ -50,7 +50,7 @@ function rewriteHtml(html){
   // fallback: pure host to router
   html = html.split(`https://${ORIGIN_HOST}`).join(`/__p__/https/${ORIGIN_HOST}`);
 
-  // collapse wrong router forms like /__p__/https//host -> /__p__/https/host
+  // collapse wrong router forms like /__p__/https//host - /__p__/https/host
   html = html.replace(/\/__p__\/https\/+([a-z0-9.-])/gi, "/__p__/https/$1");
 
   return html;

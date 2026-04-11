@@ -187,7 +187,7 @@ Benefits:
 **This configuration is currently used in production.**
 
 
-## Milestone: Monitoring, Logging & SRE — ✅ Completed
+# Milestone: Monitoring, Logging & SRE — ✅ Completed
 - [x] Grafana cloud (nginx / container metrics).
 - [x] Logs (Loki or ELK).
 - [x] Upstream timing (nginx logs) - latency dashboards.
@@ -195,5 +195,6 @@ Benefits:
 - [x] SLO/SLA.
 - [x] Runbooks, post-mortem documentation.
 
-## Milestone: Alerting — ⚙️ In progress
+
+# Milestone: Alerting — ⚙️ In progress
 - [ ] Alerts via Alertmanager (Telegram / Slack).
