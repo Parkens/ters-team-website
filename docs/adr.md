@@ -24,7 +24,7 @@ Status
 ```
 
 ## Architecture evolution
-```
+```mermaid
 flowchart TD
 A[Google Sites]
 B[Wix SaaS origin]
