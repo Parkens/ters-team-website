@@ -262,8 +262,8 @@ QUIC (UDP transport) is frequently degraded or filtered in:
 ### Decision
 Introduce two health endpoints:
 ```
-/healthz  → ingress liveness
-/readyz   → upstream availability
+/healthz  - ingress liveness
+/readyz   - upstream availability
 ```
 ### Reason
 Basic smoke tests could pass even when the upstream SaaS origin was unavailable.
@@ -352,5 +352,69 @@ The SaaS origin (Wix) already provides its own CDN layer. Additional proxy compl
 - aggressive caching  
 - complex asset rewriting  
 - edge logic
+### Status
+✅ Implemented
+
+
+## ADR-021 — Observability and SLO/SLA system introduction
+### Decision
+Introduce a multi-layer observability system based on:
+```
+nginx access logs - Loki (Grafana)
+dashboards for traffic, geography, and SLO
+separation of Edge traffic and Consumer traffic
+synthetic monitoring for global availability
+```
+### Reason
+Ingress accessibility alone does not guarantee: real user experience, correctness of routing, stability across regions
+Raw traffic included: bots, scanners, probes
+This distorted success metrics and made SLO unreliable.
+The new system enables: measuring real user experience (Consumer SLO), isolating internet noise (Edge traffic), validating global availability (Synthetic SLA)
+### Alternatives
+- basic nginx logs without aggregation  
+- external APM tools (overkill for a static SaaS origin)  
+- relying only on uptime checks
+### Status
+✅ Implemented
+
+
+## ADR-022 — Separation of Edge SLO and Consumer SLO
+### Decision
+Separate monitoring into two independent SLO layers:
+```
+Edge SLO
+- measures all incoming traffic
+- includes bots, scanners, malformed requests
+Consumer SLO
+- filters traffic using:
+  - user-agent patterns
+  - ASN filtering
+  - URI filtering
+- measures real user experience
+```
+### Reason
+Edge-level metrics showed:
+- high 4xx rate
+- low success percentage
+These metrics were misleading because most failures came from non-user traffic.
+Without separation:
+- SLO did not reflect real user experience
+- debugging became misleading
+### Alternatives
+- single SLO metric for all traffic  
+- partial filtering without ASN or user-agent segmentation
+### Status
+✅ Implemented
+
+
+## ADR-023 — Introduction of Synthetic Monitoring
+### Decision
+- Introduce synthetic monitoring to validate global availability and latency of the website.
+### Reason
+- Ingress health and real traffic metrics do not guarantee actual availability from different regions.
+- Synthetic checks provide controlled, repeatable validation of: global reachability, latency, endpoint availability
+### Alternatives
+- rely only on real user traffic
+- basic uptime checks without regional coverage
 ### Status
 ✅ Implemented
