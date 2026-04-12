@@ -304,7 +304,7 @@ frp-server/             # Fast Reverse Proxy конфиги
 
 
 ## Лицензия
-см. LICENSE.
+см. `LICENSE`.
 
 ---
 
