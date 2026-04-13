@@ -1,23 +1,23 @@
 # Named Cloudflare Tunnel
-# Комманда для запуска:
+# Example:
 #   cloudflared tunnel --config ./tunnels/configs/tunnel_named.yml run
 
 tunnel: 7cccb0e3-ebc4-4ec8-bc5c-90ec034f8115
 credentials-file: /home/parkens/.cloudflared/7cccb0e3-ebc4-4ec8-bc5c-90ec034f8115.json
 
-# Сети/стек: принудительно TCP/h2 и IPv4 — стабильнее в WSL2/моб. сетях
+# Network: TCP/h2 & IPv4
 protocol: http2
 edge-ip-version: 4
 
-# Логирование и метрики (удобно для отладки/наблюдения)
+# Logs / Metrics
 loglevel: info
-logfile: ./tunnels/logs/tunnel_named.log   # создай папку tunnels/logs
-metrics: 127.0.0.1:8081                    # локальные метрики (Prometheus)
+logfile: ./tunnels/logs/tunnel_named.log   # tunnels/logs
+metrics: 127.0.0.1:8081                    # Prometheus
 
-# Автообновления иногда “роняют” процесс в WSL2 — лучше отключить
+# Disable auto-updates for consistancy
 no-autoupdate: true
 
-# Дефолтные настройки для ВСЕХ ingress (перекрываются на уровне конкретного правила)
+# Defalt settings for ingress
 originRequest:
   connectTimeout: 10s
   tlsTimeout: 10s
@@ -28,14 +28,14 @@ originRequest:
   disableChunkedEncoding: true
 
 ingress:
-  # 1) Основной путь: пробрасываем домен на локальный nginx
+  # main path: nginx
   - hostname: proxy.ters-team.com
     service: http://localhost:8080
 
-  # 2) Healthcheck-хост (удобно для внешних проверок, не трогая основной домен)
+  # healthcheck-host
   - hostname: status.proxy.ters-team.com
     service: http_status:200
 
-  # 3) fallback
+  # fallback
   - service: http_status:404
   

@@ -1,5 +1,5 @@
-# Временной туннель cloudflared tunnel
-# Пример комманды запуска:
+# Ephemeral cloudflared tunnel
+# Example:
 # cloudflared tunnel --config ./tunnels/configs/tunnel_ephemeral.yml run
 
 url: http://localhost:8080

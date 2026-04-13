@@ -6,10 +6,44 @@
 
 Проект возник не как задача «ускорить сайт», а как инженерная попытка обеспечить **стабильный доступ к одному и тому же SaaS (Wix)** из регионов с радикально разной сетевой и политической реальностью: **США/Европа/Азия, РФ и материковый Китай**. Большинство стандартных CDN/edge-решений (Cloudflare, Netlify, Gcore) показали **частичную или полную недоступность** в одном из регионов.
 
-![Status](https://img.shields.io/badge/status-completed-green)
-![Docker](https://img.shields.io/badge/docker-ready-blue)
-![License: MIT](https://img.shields.io/badge/license-MIT-green)
+## Статус
 
+Проект активно используется в production с 2024 года по настоящее время.  
+С марта 2026 года - мне была поручена разработка новой версии сайта, с которой можно ознакомиться по ссылке: **https://andyparkensw.wixstudio.com/reworked**
+
+
+![Status](https://img.shields.io/badge/status-production-blue)
+![SLA](https://img.shields.io/badge/sla-99.9%25-success)
+![SRE](https://img.shields.io/badge/sre-practices-blueviolet)
+![Ingress](https://img.shields.io/badge/ingress-nginx-blue)
+![Networking](https://img.shields.io/badge/networking-L4%2FL7-informational)
+![Anycast](https://img.shields.io/badge/anycast-enabled-blue)
+![Monitoring](https://img.shields.io/badge/monitoring-grafana%2Floki-yellowgreen)
+
+## Автор и зона ответственности
+
+Проект полностью реализован мной (end-to-end):
+
+- архитектура и дизайн решения
+- выбор технологического стека
+- реализация ingress-инфраструктуры (nginx, Docker)
+- эксперименты с CDN/edge-провайдерами
+- настройка мониторинга и SRE (SLO/SLA/синтетика)
+- тестирование доступности (RU/CN/global)
+- анализ сетевых ограничений (DPI, TLS, routing)
+
+Решение доведено до production-ready состояния и используется в реальной среде.
+
+## Стоимость
+
+Инфраструктура спроектирована с минимальными операционными затратами:
+
+- ~$10/месяц (≈800 RUB)
+- без использования managed CDN
+- без multi-region deployment
+- с сохранением глобальной доступности (RU/CN/Global)
+
+Решение демонстрирует, что стабильный ingress может быть достигнут без дорогих CDN-решений за счёт правильной L4/L7 архитектуры.
 
 ## Навигация
 - [Цели](#цели)
